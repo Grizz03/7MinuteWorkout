@@ -26,7 +26,6 @@ class ExerciseActivity : AppCompatActivity() {
         }
         setupRestView()
     }
-
     // When timer ends
     override fun onDestroy() {
         if(restTimer != null){

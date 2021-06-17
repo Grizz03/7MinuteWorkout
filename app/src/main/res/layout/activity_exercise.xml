@@ -106,7 +106,7 @@
                     android:layout_gravity="center"
                     android:background="@drawable/circular_progress_gray"
                     android:indeterminate="false"
-                    android:max="46"
+                    android:max="31"
                     android:progress="100"
                     android:progressDrawable="@drawable/circular_progress_bar"
                     android:rotation="-90" />

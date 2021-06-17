@@ -72,9 +72,9 @@ class ExerciseActivity : AppCompatActivity() {
                 // increment timer
                 exerciseProgress++
                 // get the progress and do total time - (the incrementing value of exerciseProgress)
-                progressBarExercise.progress = 46 - exerciseProgress
+                progressBarExercise.progress = 31 - exerciseProgress
                 // convert to string
-                tvTimerExercise.text = (46 - exerciseProgress).toString()
+                tvTimerExercise.text = (31 - exerciseProgress).toString()
             }
 
             // onFinish() method inside Timer object

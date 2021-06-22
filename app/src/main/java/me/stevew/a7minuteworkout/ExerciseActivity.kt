@@ -10,25 +10,27 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_exercise.*
 import java.util.*
-import kotlin.collections.ArrayList
 
-class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // OnListener for TextToSpeech
-
-    private var exerciseTimer: CountDownTimer? = null
-    private var exerciseProgress = 0
-    private var restTimer: CountDownTimer? = null
+class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // OnListener for TextToSpeech -> required
+    // rest timer variables
+    private var restTimer: CountDownTimer? = null // initialized in onCreate
     private var restProgress = 0
 
+    // exercise timer variables
+    private var exerciseTimer: CountDownTimer? = null // initialized in onCreate
+    private var exerciseProgress = 0
+
+    // exercise list variables
     private var exerciseList: ArrayList<ExerciseModel>? = null
     private var currentExercisePosition = -1
 
-    // Text To Speech variable
-    private var tts: TextToSpeech? = null
-    
-    // media
-    private var player: MediaPlayer? = null
+    // text to speech variable
+    private var tts: TextToSpeech? = null // initialized in onCreate
 
-    
+    // media
+    private var player: MediaPlayer? = null // initialized and played in onFinish of exercise timer
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_exercise)
@@ -43,7 +45,7 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
 
         // Initializing Text To Speech
         tts = TextToSpeech(this, this)
-        
+
         // what should happen at start of app?
         exerciseList = Constants.defaultExerciseList()
         setupRestView()
@@ -59,15 +61,19 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
             exerciseTimer!!.cancel()
             exerciseProgress = 0
         }
-        if (tts != null){
+        if (tts != null) {
             tts!!.stop()
             tts!!.shutdown()
         }
+        if (player != null) {
+            player!!.stop()
+        }
 
         super.onDestroy()
+
     }
 
-
+    // REST TIMER
     private fun setRestProgressBar() {
         progressBar.progress = restProgress
 
@@ -97,23 +103,30 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
             }
 
             override fun onFinish() {
+                // Play sound on timer complete
+                player = MediaPlayer.create(applicationContext, R.raw.press_start)
+                player!!.isLooping = false
+                player!!.start()
+
                 if (currentExercisePosition < exerciseList?.size!! - 1) {
                     setupRestView()
                 } else {
                     Toast.makeText(
-                        this@ExerciseActivity, "Congrats you finished your exercises for the day!", Toast
-                            .LENGTH_SHORT
+                            this@ExerciseActivity, "Congrats you finished your exercises for the day!", Toast
+                        .LENGTH_SHORT
                     ).show()
                 }
             }
         }.start()  // starts the timer
     }
 
-
+    // SETUP THE REST TIMER
     private fun setupRestView() {
-        
 
-        
+//        Alternative way is to parse the URI
+//        val soundURI = Uri.parse("android:resource://me.stevew.a7minuteworkout/" + R.raw.press_start) ->
+//        MediaPlayer.create(applicationContext, soundURI)
+
         llRestView.visibility = View.VISIBLE
         llExerciseRestView.visibility = View.GONE
 
@@ -127,6 +140,7 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
 
     }
 
+    // SETUP THE EXERCISE TIMER
     private fun setupExerciseView() {
 
         llRestView.visibility = View.GONE
@@ -145,20 +159,22 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
         ivImage.setImageResource(exerciseList!![currentExercisePosition].getImage())
         tvExerciseName.text = exerciseList!![currentExercisePosition].getName()
     }
-    
+
     // TEXT TO SPEECH
     // init for TextToSpeech
     override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS){
-            val result = tts!!.setLanguage(Locale.US)
-            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED){
+        if (status == TextToSpeech.SUCCESS) {
+            val result = tts!!.setLanguage(Locale.US) // sets language of text to speech variable
+            // -> If language isn't supported or theres missing data such as language isn't installed on device then logs a message
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e("TTS", "The Language specified is not supported!!")
             }
         } else {
             Log.e("TTS", "Initialization Failed!!")
         }
     }
-    private fun speakOut(text:String){
+
+    private fun speakOut(text: String) {
         tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, null, "")
     }
 

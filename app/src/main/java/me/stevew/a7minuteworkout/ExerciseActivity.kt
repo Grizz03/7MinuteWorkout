@@ -8,10 +8,11 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_exercise.*
 import java.util.*
 
-class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // OnListener for TextToSpeech -> required
+class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // OnListener for TextToSpeech
     // rest timer variables
     private var restTimer: CountDownTimer? = null // initialized in onCreate
     private var restProgress = 0
@@ -30,12 +31,14 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
     // media
     private var player: MediaPlayer? = null // initialized and played in onFinish of exercise timer
 
+    // RecyclerView Adapter
+    private var exerciseAdapter: ExerciseStatusAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_exercise)
 
-        // Back button on toolbar
+        // TOOLBAR BACK BUTTON
         setSupportActionBar(toolbar_exercise_activity)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         // When clicking 'back' button on toolbar
@@ -46,9 +49,11 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
         // Initializing Text To Speech
         tts = TextToSpeech(this, this)
 
-        // what should happen at start of app?
+        // what should happen at start of activity?
         exerciseList = Constants.defaultExerciseList()
         setupRestView()
+        setupExerciseStatusRecyclerView()
+
     }
 
     // Destroys to completely end process
@@ -70,18 +75,17 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
         }
 
         super.onDestroy()
-
     }
 
     // REST TIMER
     private fun setRestProgressBar() {
         progressBar.progress = restProgress
 
-        restTimer = object : CountDownTimer(10000, 1000) {
+        restTimer = object : CountDownTimer(5000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 restProgress++
-                progressBar.progress = 10 - restProgress
-                tvTimer.text = (10 - restProgress).toString()
+                progressBar.progress = 5 - restProgress
+                tvTimer.text = (5 - restProgress).toString()
             }
 
             override fun onFinish() {
@@ -95,17 +99,24 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
     private fun setExerciseProgressBar() {
         progressBarExercise.progress = exerciseProgress
 
-        exerciseTimer = object : CountDownTimer(31000, 1000) {
+        exerciseTimer = object : CountDownTimer(10000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 exerciseProgress++
-                progressBarExercise.progress = 31 - exerciseProgress
-                tvTimerExercise.text = (31 - exerciseProgress).toString()
+                progressBarExercise.progress = 10 - exerciseProgress
+                tvTimerExercise.text = (10 - exerciseProgress).toString()
             }
 
             override fun onFinish() {
-                // Play sound on timer complete
+                /*
+                - Alternative way is to parse the URI -
+                val soundURI = Uri.parse("android:resource://me.stevew.a7minuteworkout/" + R.raw.press_start) ->
+                MediaPlayer.create(applicationContext, soundURI)
+                */
+                // Grabs media variable and creates with (context, res id)
                 player = MediaPlayer.create(applicationContext, R.raw.press_start)
+                // Makes sure not to loop media
                 player!!.isLooping = false
+                // Play
                 player!!.start()
 
                 if (currentExercisePosition < exerciseList?.size!! - 1) {
@@ -122,10 +133,6 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
 
     // SETUP THE REST TIMER
     private fun setupRestView() {
-
-//        Alternative way is to parse the URI
-//        val soundURI = Uri.parse("android:resource://me.stevew.a7minuteworkout/" + R.raw.press_start) ->
-//        MediaPlayer.create(applicationContext, soundURI)
 
         llRestView.visibility = View.VISIBLE
         llExerciseRestView.visibility = View.GONE
@@ -161,11 +168,11 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
     }
 
     // TEXT TO SPEECH
-    // init for TextToSpeech
+    // init for TextToSpeech from [OnInitListener]
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             val result = tts!!.setLanguage(Locale.US) // sets language of text to speech variable
-            // -> If language isn't supported or theres missing data such as language isn't installed on device then logs a message
+            // -> Checks if language isn't supported or language isn't installed on device then logs a message
             if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e("TTS", "The Language specified is not supported!!")
             }
@@ -178,4 +185,13 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener { // O
         tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, null, "")
     }
 
+    // RecyclerView setup
+    private fun setupExerciseStatusRecyclerView() {
+        rvExerciseStatus.layoutManager = LinearLayoutManager(
+                this,
+                LinearLayoutManager.HORIZONTAL, false
+        )
+        exerciseAdapter = ExerciseStatusAdapter(exerciseList!!, this)
+        rvExerciseStatus.adapter = exerciseAdapter
+    }
 }
